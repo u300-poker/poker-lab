@@ -10,6 +10,10 @@
     { "position": "BTN", "stack": 68.0, "is_hero": false }
   ],
   "actions": [
+    { "player": "BB", "action_type": "check", "amount": 0.0 },
+    { "player": "BTN", "action_type": "bet", "amount": 12.0 },
+    { "player": "BB", "action_type": "call", "amount": 12.0 },
+    { "player": "BB", "action_type": "check", "amount": 0.0 },
     { "player": "BTN", "action_type": "bet", "amount": 28.0 },
     { "player": "BB", "action_type": "fold", "amount": 0.0 }
   ]
