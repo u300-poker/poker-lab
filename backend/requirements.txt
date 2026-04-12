@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+python-multipart
+pytest
+httpx
+opencv-python
+numpy
+google-cloud-vision
+pydantic
+google-generativeai
+python-dotenv
