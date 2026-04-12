@@ -1,0 +1,16 @@
+{
+  "hand_id": "mock_05",
+  "timestamp": 0.0,
+  "blinds": "0.5/1",
+  "pot_size": 55.0,
+  "board_cards": ["Kh", "8h", "3d", "2h"],
+  "hero_cards": ["Ah", "Qc"],
+  "players": [
+    { "position": "BB", "stack": 70.0, "is_hero": true },
+    { "position": "BTN", "stack": 68.0, "is_hero": false }
+  ],
+  "actions": [
+    { "player": "BTN", "action_type": "bet", "amount": 28.0 },
+    { "player": "BB", "action_type": "fold", "amount": 0.0 }
+  ]
+}

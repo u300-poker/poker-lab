@@ -1,0 +1,20 @@
+{
+  "hand_id": "mock_02",
+  "timestamp": 0.0,
+  "blinds": "0.5/1",
+  "pot_size": 30.0,
+  "board_cards": [],
+  "hero_cards": ["Ks", "Qd"],
+  "players": [
+    { "position": "UTG", "stack": 100.0, "is_hero": false },
+    { "position": "BTN", "stack": 100.0, "is_hero": true },
+    { "position": "BB", "stack": 100.0, "is_hero": false }
+  ],
+  "actions": [
+    { "player": "UTG", "action_type": "raise", "amount": 3.0 },
+    { "player": "BTN", "action_type": "call", "amount": 3.0 },
+    { "player": "BB", "action_type": "raise", "amount": 13.0 },
+    { "player": "UTG", "action_type": "call", "amount": 13.0 },
+    { "player": "BTN", "action_type": "call", "amount": 13.0 }
+  ]
+}

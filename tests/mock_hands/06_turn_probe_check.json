@@ -1,0 +1,16 @@
+{
+  "hand_id": "mock_06",
+  "timestamp": 0.0,
+  "blinds": "0.5/1",
+  "pot_size": 22.0,
+  "board_cards": ["Ks", "Qh", "4d", "Kd"],
+  "hero_cards": ["Kc", "Qd"],
+  "players": [
+    { "position": "BTN", "stack": 89.0, "is_hero": true },
+    { "position": "BB", "stack": 89.0, "is_hero": false }
+  ],
+  "actions": [
+    { "player": "BB", "action_type": "check", "amount": 0.0 },
+    { "player": "BTN", "action_type": "check", "amount": 0.0 }
+  ]
+}
