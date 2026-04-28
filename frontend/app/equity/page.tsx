@@ -107,6 +107,24 @@ export default function EquityPage() {
     }
   }, [heroCards, boardCards, opponents.map(o => o.cards).flat()]);
 
+  const getNextSlot = (current: { type: SlotType; index?: number }): { type: SlotType; index?: number } | null => {
+    // 슬롯 순서: hero1 → hero2 → board[0~4] → opponent[0][0] → opponent[0][1] → opponent[1][0]...
+    if (current.type === 'hero1') return { type: 'hero2' };
+    if (current.type === 'hero2') return { type: 'board', index: 0 };
+    if (current.type === 'board') {
+      const nextIdx = (current.index ?? 0) + 1;
+      if (nextIdx < 5) return { type: 'board', index: nextIdx };
+      return opponents.length > 0 ? { type: 'opponent', index: 0 } : null;
+    }
+    if (current.type === 'opponent') {
+      const nextIdx = (current.index ?? 0) + 1;
+      if (nextIdx < opponents.length * 2) {
+        return { type: 'opponent', index: nextIdx };
+      }
+    }
+    return null;
+  };
+
   const handleCardSelect = (card: string) => {
     if (!activeSlot) return;
 
@@ -127,7 +145,10 @@ export default function EquityPage() {
       newOpponents[oppIdx].cards = newCards;
       setOpponents(newOpponents);
     }
-    // 선택 후 닫지 않음 (계속 클릭 가능)
+
+    // 다음 슬롯으로 자동 이동
+    const nextSlot = getNextSlot(activeSlot);
+    setActiveSlot(nextSlot);
   };
 
   const getSuitSymbol = (suit: string): string => {
