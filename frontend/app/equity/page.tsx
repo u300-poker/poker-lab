@@ -15,8 +15,72 @@ interface StreetEquity {
 
 const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
 const SUITS = ['h', 'd', 'c', 's'];
+const RANK_ORDER: { [key: string]: number } = {
+  A: 14, K: 13, Q: 12, J: 11, T: 10, '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2,
+};
 
 type SlotType = 'hero1' | 'hero2' | 'board' | 'opponent';
+
+// 포커 레인지 파싱 함수
+const parseRange = (rangeStr: string): Array<[string, string]> => {
+  const hands: Array<[string, string]> = [];
+  const parts = rangeStr.toLowerCase().split(',').map(p => p.trim());
+
+  parts.forEach((part) => {
+    if (!part) return;
+
+    // "JJ+" 형식
+    if (part.match(/^[a-z]\d\+$/)) {
+      const rank = part[0].toUpperCase();
+      const startVal = RANK_ORDER[rank];
+      for (let val = startVal; val <= 14; val++) {
+        const r = Object.entries(RANK_ORDER).find(([_, v]) => v === val)?.[0];
+        if (r) hands.push([`${r}${r}h`, `${r}${r}d`]);
+      }
+      return;
+    }
+
+    // "QQ-88" 형식
+    if (part.match(/^[a-z]-[a-z]$/)) {
+      const [startRank, endRank] = part.split('-');
+      const startVal = RANK_ORDER[startRank.toUpperCase()];
+      const endVal = RANK_ORDER[endRank.toUpperCase()];
+      const minVal = Math.min(startVal, endVal);
+      const maxVal = Math.max(startVal, endVal);
+      for (let val = maxVal; val >= minVal; val--) {
+        const r = Object.entries(RANK_ORDER).find(([_, v]) => v === val)?.[0];
+        if (r) hands.push([`${r}${r}h`, `${r}${r}d`]);
+      }
+      return;
+    }
+
+    // "AKs", "AKo", "AK" 형식
+    if (part.length >= 2) {
+      const r1 = part[0].toUpperCase();
+      const r2 = part[1].toUpperCase();
+      const isSuited = part.includes('s');
+      const isOffsuit = part.includes('o');
+
+      if (r1 === r2) {
+        // 페어
+        hands.push([`${r1}${r1}h`, `${r1}${r1}d`]);
+      } else {
+        // 비페어
+        if (isSuited) {
+          hands.push([`${r1}${r2}h`, `${r1}${r2}d`]);
+        } else if (isOffsuit) {
+          hands.push([`${r1}${r2}h`, `${r1}${r2}c`]);
+        } else {
+          // 지정 없으면 모든 수트 조합
+          hands.push([`${r1}${r2}h`, `${r1}${r2}d`]);
+          hands.push([`${r1}${r2}c`, `${r1}${r2}s`]);
+        }
+      }
+    }
+  });
+
+  return hands;
+};
 
 export default function EquityPage() {
   const [heroCards, setHeroCards] = useState<[string | null, string | null]>([null, null]);
@@ -32,6 +96,8 @@ export default function EquityPage() {
   } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showRangeModal, setShowRangeModal] = useState(false);
+  const [rangeInput, setRangeInput] = useState('JJ+, AK');
 
   // 자동 계산
   useEffect(() => {
@@ -75,6 +141,28 @@ export default function EquityPage() {
     const newOpponents = [...opponents];
     newOpponents[idx].expanded = !newOpponents[idx].expanded;
     setOpponents(newOpponents);
+  };
+
+  const handleAddRange = () => {
+    try {
+      const hands = parseRange(rangeInput);
+      if (hands.length === 0) {
+        setError('유효한 레인지를 입력하세요');
+        return;
+      }
+
+      // 각 핸드를 상대로 추가
+      const newOpponents = hands.map(([c1, c2]) => ({
+        cards: [c1, c2] as [string, string],
+        expanded: false,
+      }));
+
+      setOpponents([...opponents, ...newOpponents]);
+      setShowRangeModal(false);
+      setError('');
+    } catch (err) {
+      setError('레인지 파싱 실패');
+    }
   };
 
   const calculateEquity = async () => {
@@ -264,12 +352,7 @@ export default function EquityPage() {
         {/* 버튼 */}
         <div className="px-6 py-8 flex gap-4 justify-center">
           <button
-            onClick={() => {
-              setHeroCards([null, null]);
-              setBoardCards([null, null, null, null, null]);
-              setOpponents([]);
-              setError('');
-            }}
+            onClick={() => setShowRangeModal(true)}
             className="px-6 py-2 rounded-full border border-zinc-600 hover:border-zinc-400 text-sm font-semibold transition-colors"
           >
             + Range
@@ -308,6 +391,42 @@ export default function EquityPage() {
           ⓘ
         </button>
       </div>
+
+      {/* Range 모달 */}
+      {showRangeModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+          <div className="bg-zinc-900 rounded-2xl border border-zinc-700 p-6 w-full max-w-sm space-y-4">
+            <h2 className="text-lg font-bold">레인지 추가</h2>
+            <div className="space-y-2">
+              <p className="text-xs text-zinc-400">예: JJ+, AK, QQ-88, AKs, AKo</p>
+              <textarea
+                value={rangeInput}
+                onChange={(e) => setRangeInput(e.target.value)}
+                placeholder="JJ+, AK, AKs"
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-blue-400 resize-none"
+                rows={3}
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowRangeModal(false)}
+                className="flex-1 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-sm font-semibold transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleAddRange}
+                className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-semibold transition-colors"
+              >
+                추가
+              </button>
+            </div>
+            {error && (
+              <p className="text-xs text-red-400 text-center">{error}</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 카드 선택 패널 */}
       {activeSlot && (
