@@ -90,7 +90,6 @@ export default function EquityPage() {
     equity?: number;
     expanded: boolean;
   }>>([]);
-  const [showHeroCards, setShowHeroCards] = useState(false);
   const [activeSlot, setActiveSlot] = useState<{
     type: SlotType;
     index?: number;
@@ -339,8 +338,8 @@ export default function EquityPage() {
           </div>
         </div>
 
-        {/* 내 카드 (showHeroCards 또는 상대 있을 때 표시) */}
-        {(showHeroCards || opponents.length > 0) && (
+        {/* 내 카드 (activeSlot이 hero이거나 상대 있을 때 표시) */}
+        {(activeSlot?.type?.includes('hero') || opponents.length > 0) && (
           <div className="px-6 py-6 border-b border-zinc-700">
             <div className="flex items-center gap-3">
               <div className="flex gap-2">
@@ -363,7 +362,6 @@ export default function EquityPage() {
               <div className="flex flex-col gap-2 ml-4">
                 <button
                   onClick={() => {
-                    setShowHeroCards(false);
                     setHeroCards([null, null]);
                     setActiveSlot(null);
                   }}
@@ -445,7 +443,14 @@ export default function EquityPage() {
             + Range
           </button>
           <button
-            onClick={() => setShowHeroCards(true)}
+            onClick={() => {
+              // 내 카드가 없으면 슬롯 활성화, 있으면 상대 추가
+              if (!heroCards[0] || !heroCards[1]) {
+                setActiveSlot({ type: 'hero1' });
+              } else {
+                setOpponents([...opponents, { cards: [null, null], expanded: true }]);
+              }
+            }}
             className="px-6 py-2 rounded-full border border-zinc-600 hover:border-zinc-400 text-sm font-semibold transition-colors"
           >
             + Hand
