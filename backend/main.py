@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
 import shutil
-from typing import List
+from typing import List, Union
 from .services.video_processor import extract_hand_timestamps, extract_frame
 from .services.ocr_engine import OCREngine
 from .services.ai_coach import analyze_hand
@@ -30,7 +30,7 @@ class AnalyzeRequest(BaseModel):
 class EquityRequest(BaseModel):
     hero_cards: List[str]
     board_cards: List[str] = []
-    opponent_cards: List[str] = []
+    opponent_cards: Union[List[str], List[List[str]]] = []
 
 @app.post("/upload")
 async def upload_video(file: UploadFile = File(...)):
@@ -95,18 +95,33 @@ async def analyze_image(image: UploadFile = File(...)):
 @app.post("/calculate-equity")
 async def calculate_equity(request: EquityRequest):
     try:
-        if request.opponent_cards:
-            # 양측 카드를 알 때 → 정확한 계산
-            players = [
-                {"position": "Hero", "cards": request.hero_cards, "is_hero": True},
-                {"position": "Opponent", "cards": request.opponent_cards, "is_hero": False},
-            ]
-            result = calculate_street_equities(players, request.board_cards)
-        else:
-            # 히어로 카드만 있을 때 → 랜덤 핸드 기준
-            result = calculate_hero_equity_vs_random(request.hero_cards, request.board_cards)
+        if not request.opponent_cards:
+            # 상대 없음 → 랜덤 핸드 기준
+            return calculate_hero_equity_vs_random(request.hero_cards, request.board_cards)
 
-        return result
+        # 여러 상대 처리
+        players = [
+            {"position": "Hero", "cards": request.hero_cards, "is_hero": True},
+        ]
+
+        # opponent_cards가 List[List[str]] (여러 상대) 또는 List[str] (한 상대) 형태
+        if isinstance(request.opponent_cards[0], list):
+            # 여러 상대
+            for i, opp_cards in enumerate(request.opponent_cards):
+                players.append({
+                    "position": f"Opponent {i+1}",
+                    "cards": opp_cards,
+                    "is_hero": False,
+                })
+        else:
+            # 한 상대
+            players.append({
+                "position": "Opponent",
+                "cards": request.opponent_cards,
+                "is_hero": False,
+            })
+
+        return calculate_street_equities(players, request.board_cards)
     except Exception as e:
         import traceback
         traceback.print_exc()
