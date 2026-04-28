@@ -302,36 +302,39 @@ export default function EquityPage() {
           </div>
         </div>
 
-        {/* 내 카드 */}
-        <div className="px-6 py-6 border-b border-zinc-700">
-          <div className="flex items-center gap-3">
-            <div className="flex gap-2">
-              <CardSlot
-                card={heroCards[0]}
-                onClick={() => setActiveSlot({ type: 'hero1' })}
-                isActive={activeSlot?.type === 'hero1'}
-              />
-              <CardSlot
-                card={heroCards[1]}
-                onClick={() => setActiveSlot({ type: 'hero2' })}
-                isActive={activeSlot?.type === 'hero2'}
-              />
-            </div>
-            <div className="flex-1 text-right">
-              <div className="text-4xl font-light tracking-wide text-blue-300">
-                {loading ? '-' : '100.0'}%
+        {/* 내 카드 (상대 있을 때만 표시) */}
+        {opponents.length > 0 && (
+          <div className="px-6 py-6 border-b border-zinc-700">
+            <div className="flex items-center gap-3">
+              <div className="flex gap-2">
+                <CardSlot
+                  card={heroCards[0]}
+                  onClick={() => setActiveSlot({ type: 'hero1' })}
+                  isActive={activeSlot?.type === 'hero1'}
+                />
+                <CardSlot
+                  card={heroCards[1]}
+                  onClick={() => setActiveSlot({ type: 'hero2' })}
+                  isActive={activeSlot?.type === 'hero2'}
+                />
+              </div>
+              <div className="flex-1 text-right">
+                <div className="text-4xl font-light tracking-wide text-blue-300">
+                  {loading ? '-' : '100.0'}%
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 ml-4">
+                <button className="text-xl text-zinc-500 hover:text-white">✕</button>
+                <button className="text-sm text-zinc-500 hover:text-white">▼</button>
               </div>
             </div>
-            <div className="flex flex-col gap-2 ml-4">
-              <button className="text-xl text-zinc-500 hover:text-white">✕</button>
-              <button className="text-sm text-zinc-500 hover:text-white">▼</button>
-            </div>
           </div>
-        </div>
+        )}
 
-        {/* 상대들 */}
-        <div className="px-6 py-6">
-          {opponents.map((opp, idx) => (
+        {/* 상대들 (상대 있을 때만 표시) */}
+        {opponents.length > 0 && (
+          <div className="px-6 py-6">
+            {opponents.map((opp, idx) => (
             <div key={idx} className={`border-b border-zinc-700 pb-6 ${idx === opponents.length - 1 ? 'border-b-0' : ''}`}>
               {/* 헤더 */}
               <div className="flex items-center gap-3 mb-4">
@@ -378,13 +381,14 @@ export default function EquityPage() {
             </div>
           ))}
 
-          {/* 빈 상태 */}
-          {opponents.length === 0 && (
-            <div className="text-center text-zinc-600 py-8">
-              상대를 추가하세요
-            </div>
-          )}
-        </div>
+            {/* 빈 상태 */}
+            {opponents.length === 0 && (
+              <div className="text-center text-zinc-600 py-8">
+                상대를 추가하세요
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 버튼 */}
         <div className="px-6 py-8 flex gap-4 justify-center">
