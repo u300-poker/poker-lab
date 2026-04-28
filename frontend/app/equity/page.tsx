@@ -127,7 +127,21 @@ export default function EquityPage() {
       newOpponents[oppIdx].cards = newCards;
       setOpponents(newOpponents);
     }
-    setActiveSlot(null);
+    // 선택 후 닫지 않음 (계속 클릭 가능)
+  };
+
+  const getSuitSymbol = (suit: string): string => {
+    const symbols: { [key: string]: string } = {
+      h: '♥',
+      d: '♦',
+      c: '♣',
+      s: '♠',
+    };
+    return symbols[suit] || suit;
+  };
+
+  const getRankDisplay = (rank: string): string => {
+    return rank === 'T' ? '10' : rank;
   };
 
   const handleAddOpponent = () => {
@@ -537,23 +551,30 @@ export default function EquityPage() {
 
       {/* 카드 선택 패널 */}
       {activeSlot && (
-        <div className="border-t border-zinc-700 bg-zinc-900/80 backdrop-blur px-6 py-4">
-          <div className="grid grid-cols-7 gap-2">
-            {RANKS.map((rank) =>
-              SUITS.map((suit) => {
-                const card = `${rank}${suit}`;
-                return (
-                  <button
-                    key={card}
-                    onClick={() => handleCardSelect(card)}
-                    className="py-2 px-1 bg-zinc-800 hover:bg-blue-600 rounded-lg text-xs font-semibold transition-colors"
-                  >
-                    {rank}
-                    <span className="text-xxs">{suit}</span>
-                  </button>
-                );
-              })
-            )}
+        <div className="border-t border-zinc-700 bg-black backdrop-blur px-3 py-4">
+          <div className="space-y-2">
+            {SUITS.map((suit) => (
+              <div key={suit} className="flex gap-1">
+                {RANKS.map((rank) => {
+                  const card = `${rank}${suit}`;
+                  const isRed = suit === 'h' || suit === 'd';
+                  return (
+                    <button
+                      key={card}
+                      onClick={() => handleCardSelect(card)}
+                      className={`flex-1 py-2 rounded-lg font-bold text-xs transition-colors ${
+                        isRed
+                          ? 'bg-white text-red-600 hover:bg-gray-200'
+                          : 'bg-white text-black hover:bg-gray-200'
+                      }`}
+                    >
+                      <div>{getRankDisplay(rank)}</div>
+                      <div className="text-lg">{getSuitSymbol(suit)}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
           </div>
         </div>
       )}
