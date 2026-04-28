@@ -14,19 +14,29 @@ interface StreetEquity {
   vs_random?: boolean;
 }
 
+const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
+const SUITS = ['h', 'd', 'c', 's'];
+
 export default function EquityPage() {
-  const [heroCards, setHeroCards] = useState('Ah Kh');
-  const [boardCards, setBoardCards] = useState('2h 7d 9c');
-  const [opponentCards, setOpponentCards] = useState('Qd Jd');
+  const [slots, setSlots] = useState<(string | null)[]>([null, null, null, null, null]);
+  const [activeSlot, setActiveSlot] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState<StreetEquity[]>([]);
 
-  const parseCards = (input: string): string[] => {
-    return input
-      .trim()
-      .split(/\s+/)
-      .filter((c) => c.length >= 2);
+  const handleCardSelect = (card: string) => {
+    if (activeSlot !== null) {
+      const newSlots = [...slots];
+      newSlots[activeSlot] = card;
+      setSlots(newSlots);
+      setActiveSlot(null);
+    }
+  };
+
+  const handleClearSlot = (index: number) => {
+    const newSlots = [...slots];
+    newSlots[index] = null;
+    setSlots(newSlots);
   };
 
   const handleCalculate = async () => {
@@ -35,29 +45,32 @@ export default function EquityPage() {
     setLoading(true);
 
     try {
-      const hero = parseCards(heroCards);
-      const board = parseCards(boardCards);
-      const opponent = parseCards(opponentCards);
+      const cards = slots.filter((c) => c !== null) as string[];
 
-      if (hero.length !== 2) {
-        throw new Error('히어로 카드는 정확히 2장이어야 합니다');
+      if (cards.length < 2) {
+        throw new Error('최소 2장의 카드가 필요합니다');
       }
 
-      if (board.length > 0 && (board.length < 3 || board.length > 5)) {
-        throw new Error('보드 카드는 3~5장이어야 합니다');
-      }
+      // 처음 2장 = 히어로, 나머지 = 보드/상대
+      const heroCards = cards.slice(0, 2);
+      const restCards = cards.slice(2);
 
-      if (opponent.length > 0 && opponent.length !== 2) {
-        throw new Error('상대 카드는 0장 또는 2장이어야 합니다');
+      let boardCards: string[] = [];
+      let opponentCards: string[] = [];
+
+      // 보드 먼저 (최대 5장 중 3~5장)
+      if (restCards.length >= 3) {
+        boardCards = restCards.slice(0, Math.min(5 - 2, 5)); // 최대 5장 중 히어로 2 제외
+        opponentCards = restCards.slice(boardCards.length);
       }
 
       const response = await fetch('http://localhost:8000/calculate-equity', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          hero_cards: hero,
-          board_cards: board,
-          opponent_cards: opponent,
+          hero_cards: heroCards,
+          board_cards: boardCards,
+          opponent_cards: opponentCards,
         }),
       });
 
@@ -75,95 +88,98 @@ export default function EquityPage() {
     }
   };
 
+  const handleClear = () => {
+    setSlots([null, null, null, null, null]);
+    setError('');
+    setResult([]);
+    setActiveSlot(null);
+  };
+
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="mx-auto max-w-6xl px-6 py-12">
-        <div className="mb-12">
-          <h1 className="text-4xl font-bold mb-2">Equity Calculator</h1>
-          <p className="text-zinc-400">
-            포커 핸드의 스트릿별 승률을 계산해보세요
-          </p>
-        </div>
+    <div className="min-h-screen bg-black text-white flex flex-col">
+      {/* 헤더 */}
+      <div className="border-b border-white/10 px-6 py-6">
+        <h1 className="text-2xl font-bold">Odds Calculator</h1>
+      </div>
 
-        {/* 입력 폼 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {/* 히어로 카드 */}
-          <div className="bg-zinc-900/40 backdrop-blur-xl rounded-3xl border border-white/5 p-6">
-            <label className="block text-sm font-semibold text-zinc-300 mb-3">
-              내 카드 (필수)
-            </label>
-            <input
-              type="text"
-              value={heroCards}
-              onChange={(e) => setHeroCards(e.target.value)}
-              placeholder="예: Ah Kh"
-              className="w-full bg-zinc-800/50 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500/50"
-            />
-            <p className="text-xs text-zinc-500 mt-2">
-              2장을 입력하세요 (예: Ah, Kd, 9h, Ts)
-            </p>
-          </div>
-
-          {/* 상대 카드 */}
-          <div className="bg-zinc-900/40 backdrop-blur-xl rounded-3xl border border-white/5 p-6">
-            <label className="block text-sm font-semibold text-zinc-300 mb-3">
-              상대 카드 (선택)
-            </label>
-            <input
-              type="text"
-              value={opponentCards}
-              onChange={(e) => setOpponentCards(e.target.value)}
-              placeholder="예: Qd Jd"
-              className="w-full bg-zinc-800/50 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500/50"
-            />
-            <p className="text-xs text-zinc-500 mt-2">
-              입력 안 하면 랜덤 핸드 기준으로 계산
-            </p>
-          </div>
-
-          {/* 보드 카드 */}
-          <div className="md:col-span-2 bg-zinc-900/40 backdrop-blur-xl rounded-3xl border border-white/5 p-6">
-            <label className="block text-sm font-semibold text-zinc-300 mb-3">
-              보드 카드 (선택)
-            </label>
-            <input
-              type="text"
-              value={boardCards}
-              onChange={(e) => setBoardCards(e.target.value)}
-              placeholder="예: 2h 7d 9c"
-              className="w-full bg-zinc-800/50 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500/50"
-            />
-            <p className="text-xs text-zinc-500 mt-2">
-              3~5장 입력 (Flop 3장, Turn 4장, River 5장)
-            </p>
-          </div>
+      {/* 메인 컨텐츠 */}
+      <div className="flex-1 flex flex-col px-6 py-8">
+        {/* 카드 슬롯 */}
+        <div className="flex justify-center gap-3 mb-12">
+          {slots.map((card, idx) => (
+            <button
+              key={idx}
+              onClick={() => setActiveSlot(idx)}
+              className={`w-20 h-28 rounded-3xl border-2 transition-all ${
+                activeSlot === idx
+                  ? 'border-indigo-500 bg-indigo-500/10'
+                  : 'border-zinc-500 bg-zinc-800/30'
+              } flex items-center justify-center`}
+            >
+              {card ? (
+                <div className="text-center">
+                  <div className="text-2xl font-bold">{card[0]}</div>
+                  <div className="text-lg">{card[1]}</div>
+                </div>
+              ) : (
+                <div className="text-zinc-600">+</div>
+              )}
+            </button>
+          ))}
         </div>
 
         {/* 에러 메시지 */}
         {error && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4 mb-8">
+          <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4 mb-8 text-center">
             <p className="text-red-300 text-sm font-semibold">{error}</p>
           </div>
         )}
 
-        {/* 계산 버튼 */}
-        <div className="flex gap-4 mb-12">
+        {/* 카드 선택 패널 */}
+        {activeSlot !== null && (
+          <div className="mb-8 p-6 bg-zinc-900/50 rounded-3xl border border-white/5">
+            <p className="text-zinc-400 text-sm mb-4">슬롯 {activeSlot + 1} - 카드 선택</p>
+            <div className="grid grid-cols-7 gap-2">
+              {RANKS.map((rank) =>
+                SUITS.map((suit) => {
+                  const card = `${rank}${suit}`;
+                  return (
+                    <button
+                      key={card}
+                      onClick={() => handleCardSelect(card)}
+                      className="py-2 px-1 bg-zinc-800 hover:bg-indigo-600 rounded-lg text-xs font-semibold transition-colors"
+                    >
+                      {rank}
+                      <span className="text-xxs">{suit}</span>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+            <button
+              onClick={() => {
+                handleClearSlot(activeSlot);
+                setActiveSlot(null);
+              }}
+              className="mt-4 w-full py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-sm text-red-300 transition-colors"
+            >
+              삭제
+            </button>
+          </div>
+        )}
+
+        {/* 버튼 그룹 */}
+        <div className="flex justify-center gap-4 mb-12">
           <button
             onClick={handleCalculate}
-            disabled={loading}
-            className="bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/50 rounded-2xl py-3 px-8 font-semibold transition-colors"
+            disabled={loading || slots.filter((c) => c).length < 2}
+            className="px-8 py-3 rounded-full border-2 border-white/20 hover:border-white/40 disabled:opacity-50 font-semibold transition-colors"
           >
-            {loading ? '계산 중...' : '에퀴티 계산'}
+            {loading ? '계산 중...' : '계산'}
           </button>
           <button
-            onClick={() => {
-              setHeroCards('Ah Kh');
-              setBoardCards('2h 7d 9c');
-              setOpponentCards('Qd Jd');
-              setError('');
-              setResult([]);
-            }}
-            className="bg-zinc-800/50 hover:bg-zinc-700/50 border border-white/5 rounded-2xl py-3 px-8 font-semibold transition-colors"
+            onClick={handleClear}
+            className="px-8 py-3 rounded-full border-2 border-white/20 hover:border-white/40 font-semibold transition-colors"
           >
             초기화
           </button>
@@ -172,17 +188,8 @@ export default function EquityPage() {
         {/* 결과 */}
         {result.length > 0 && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold">에퀴티 분석</h2>
+            <h2 className="text-xl font-bold">에퀴티 분석</h2>
             <EquityChart streetEquities={result} />
-          </div>
-        )}
-
-        {/* 안내 */}
-        {result.length === 0 && !loading && !error && (
-          <div className="bg-zinc-900/30 border border-white/5 rounded-2xl p-8 text-center">
-            <p className="text-zinc-400">
-              카드를 입력하고 "에퀴티 계산" 버튼을 클릭하세요
-            </p>
           </div>
         )}
       </div>
