@@ -8,6 +8,7 @@ from .services.video_processor import extract_hand_timestamps, extract_frame
 from .services.ocr_engine import OCREngine
 from .services.ai_coach import analyze_hand
 from .services.image_parser import parse_hand_image
+from .services.equity_calc import calculate_street_equities, calculate_hero_equity_vs_random
 from .models.game_data import HandLog
 
 app = FastAPI()
@@ -25,6 +26,11 @@ TEMP_DIR = "temp_videos"
 
 class AnalyzeRequest(BaseModel):
     file_path: str
+
+class EquityRequest(BaseModel):
+    hero_cards: List[str]
+    board_cards: List[str] = []
+    opponent_cards: List[str] = []
 
 @app.post("/upload")
 async def upload_video(file: UploadFile = File(...)):
@@ -84,3 +90,24 @@ async def analyze_image(image: UploadFile = File(...)):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
     return hand_log
+
+
+@app.post("/calculate-equity")
+async def calculate_equity(request: EquityRequest):
+    try:
+        if request.opponent_cards:
+            # 양측 카드를 알 때 → 정확한 계산
+            players = [
+                {"position": "Hero", "cards": request.hero_cards, "is_hero": True},
+                {"position": "Opponent", "cards": request.opponent_cards, "is_hero": False},
+            ]
+            result = calculate_street_equities(players, request.board_cards)
+        else:
+            # 히어로 카드만 있을 때 → 랜덤 핸드 기준
+            result = calculate_hero_equity_vs_random(request.hero_cards, request.board_cards)
+
+        return result
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=400, detail=str(e))
