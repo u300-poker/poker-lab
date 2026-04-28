@@ -97,7 +97,8 @@ export default function EquityPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showRangeModal, setShowRangeModal] = useState(false);
-  const [rangeInput, setRangeInput] = useState('JJ+, AK');
+  const [selectedRange, setSelectedRange] = useState<Set<string>>(new Set());
+  const [rangeFrequency, setRangeFrequency] = useState(100);
 
   // 자동 계산
   useEffect(() => {
@@ -143,26 +144,62 @@ export default function EquityPage() {
     setOpponents(newOpponents);
   };
 
-  const handleAddRange = () => {
-    try {
-      const hands = parseRange(rangeInput);
-      if (hands.length === 0) {
-        setError('유효한 레인지를 입력하세요');
-        return;
-      }
-
-      // 각 핸드를 상대로 추가
-      const newOpponents = hands.map(([c1, c2]) => ({
-        cards: [c1, c2] as [string, string],
-        expanded: false,
-      }));
-
-      setOpponents([...opponents, ...newOpponents]);
-      setShowRangeModal(false);
-      setError('');
-    } catch (err) {
-      setError('레인지 파싱 실패');
+  const handleToggleRangeHand = (hand: string) => {
+    const newRange = new Set(selectedRange);
+    if (newRange.has(hand)) {
+      newRange.delete(hand);
+    } else {
+      newRange.add(hand);
     }
+    setSelectedRange(newRange);
+  };
+
+  const handleAddSelectedRange = () => {
+    if (selectedRange.size === 0) {
+      setError('최소 하나의 핸드를 선택하세요');
+      return;
+    }
+
+    const newOpponents = Array.from(selectedRange).map((hand) => {
+      const [r1, r2] = hand.length === 2 ? [hand[0], hand[1]] : [hand[0], hand[1]];
+      const suit1 = hand.includes('s') ? 'h' : hand.includes('o') ? 'h' : 'h';
+      const suit2 = hand.includes('s') ? 'd' : hand.includes('o') ? 'c' : 'd';
+      return {
+        cards: [`${r1}${suit1}`, `${r2}${suit2}`] as [string, string],
+        expanded: false,
+      };
+    });
+
+    setOpponents([...opponents, ...newOpponents]);
+    setShowRangeModal(false);
+    setSelectedRange(new Set());
+    setError('');
+  };
+
+  const rankOrder = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
+
+  const getHandsForChart = () => {
+    const hands: { [key: string]: string[] } = {};
+    rankOrder.forEach((r1) => {
+      rankOrder.forEach((r2) => {
+        const r1Idx = rankOrder.indexOf(r1);
+        const r2Idx = rankOrder.indexOf(r2);
+
+        let hand = '';
+        if (r1 === r2) {
+          hand = `${r1}${r2}`; // 페어
+        } else if (r1Idx < r2Idx) {
+          hand = `${r1}${r2}s`; // Suited
+        } else {
+          hand = `${r1}${r2}o`; // Offsuit
+        }
+
+        if (!hands[hand]) {
+          hands[hand] = [r1, r2];
+        }
+      });
+    });
+    return hands;
   };
 
   const calculateEquity = async () => {
@@ -394,36 +431,102 @@ export default function EquityPage() {
 
       {/* Range 모달 */}
       {showRangeModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-          <div className="bg-zinc-900 rounded-2xl border border-zinc-700 p-6 w-full max-w-sm space-y-4">
-            <h2 className="text-lg font-bold">레인지 추가</h2>
-            <div className="space-y-2">
-              <p className="text-xs text-zinc-400">예: JJ+, AK, QQ-88, AKs, AKo</p>
-              <textarea
-                value={rangeInput}
-                onChange={(e) => setRangeInput(e.target.value)}
-                placeholder="JJ+, AK, AKs"
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-blue-400 resize-none"
-                rows={3}
+        <div className="fixed inset-0 bg-black/80 flex flex-col items-center justify-end z-50 p-4">
+          <div className="bg-black rounded-3xl border border-zinc-700 w-full max-w-md max-h-[90vh] overflow-y-auto space-y-4 p-4">
+            {/* 헤더 */}
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold text-zinc-400">레인지 선택</h2>
+              <button
+                onClick={() => {
+                  setShowRangeModal(false);
+                  setSelectedRange(new Set());
+                }}
+                className="text-2xl text-zinc-500 hover:text-white"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* 레인지 차트 */}
+            <div className="space-y-1">
+              {rankOrder.map((r1) => (
+                <div key={r1} className="flex gap-1">
+                  {rankOrder.map((r2) => {
+                    const r1Idx = rankOrder.indexOf(r1);
+                    const r2Idx = rankOrder.indexOf(r2);
+                    let hand = '';
+                    let display = '';
+
+                    if (r1 === r2) {
+                      hand = `${r1}${r2}`;
+                      display = hand;
+                    } else if (r1Idx < r2Idx) {
+                      hand = `${r1}${r2}s`;
+                      display = `${r1}${r2}s`;
+                    } else {
+                      hand = `${r1}${r2}o`;
+                      display = `${r1}${r2}o`;
+                    }
+
+                    const isSelected = selectedRange.has(hand);
+                    return (
+                      <button
+                        key={hand}
+                        onClick={() => handleToggleRangeHand(hand)}
+                        className={`flex-1 py-2 px-1 text-xs font-semibold rounded transition-colors ${
+                          isSelected
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                        }`}
+                      >
+                        {display}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+
+            {/* 선택 통계 */}
+            <div className="text-xs text-zinc-400 text-center pt-4 border-t border-zinc-700">
+              {selectedRange.size}개 핸드 선택됨
+            </div>
+
+            {/* 슬라이더 */}
+            <div className="pt-2 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-zinc-400">비율</span>
+                <span className="text-blue-300 font-semibold">{rangeFrequency}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={rangeFrequency}
+                onChange={(e) => setRangeFrequency(Number(e.target.value))}
+                className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer"
               />
             </div>
-            <div className="flex gap-2">
+
+            {/* 버튼 */}
+            <div className="flex gap-2 pt-4 border-t border-zinc-700">
               <button
-                onClick={() => setShowRangeModal(false)}
+                onClick={() => {
+                  setShowRangeModal(false);
+                  setSelectedRange(new Set());
+                }}
                 className="flex-1 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-sm font-semibold transition-colors"
               >
                 취소
               </button>
               <button
-                onClick={handleAddRange}
-                className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-semibold transition-colors"
+                onClick={handleAddSelectedRange}
+                className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+                disabled={selectedRange.size === 0}
               >
                 추가
               </button>
             </div>
-            {error && (
-              <p className="text-xs text-red-400 text-center">{error}</p>
-            )}
           </div>
         </div>
       )}
