@@ -166,6 +166,12 @@ export default function Home() {
             className="text-zinc-400 text-xl font-light mb-8 max-w-2xl mx-auto leading-relaxed tracking-tight">
             당신의 포커 실력을 연구하고 교정하는 <span className="text-white font-semibold">AI 퍼스널 코치</span>
           </motion.p>
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.35 }}>
+            <a href="/quiz"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/30 hover:border-indigo-400/50 text-indigo-300 font-semibold rounded-2xl transition-all text-sm">
+              🎯 내 포커 성향 테스트하기
+            </a>
+          </motion.div>
         </header>
 
         <AnimatePresence mode="wait">
