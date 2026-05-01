@@ -1,11 +1,15 @@
 "use client";
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
-import { Upload, Search, BarChart2, Zap, Brain, Target, Image as ImageIcon, Plus, X } from 'lucide-react';
+import { Upload, Search, BarChart2, Zap, Brain, Target, Image as ImageIcon, Plus, X, History, LogIn, LogOut, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import VideoPlayer from '../components/VideoPlayer';
 import CoachSidebar from '../components/CoachSidebar';
 import Footer from '../components/Footer';
+import AuthModal from '../components/AuthModal';
+import { saveHand } from '../lib/storage';
+import { getUser, logout, DummyUser } from '../lib/auth';
 
 type TabType = 'video' | 'image';
 
@@ -24,7 +28,12 @@ const SEVERITY_DOT: Record<string, string> = {
 };
 
 export default function Home() {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabType>('video');
+  const [user, setUser] = useState<DummyUser | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  useEffect(() => { setUser(getUser()) }, []);
 
   // Video tab state
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -136,6 +145,7 @@ export default function Home() {
         const formData = new FormData();
         formData.append('image', queue[i].file);
         const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/analyze-image`, formData);
+        saveHand(res.data, queue[i].file.name);
         setQueue(prev => prev.map((item, idx) => idx === i ? { ...item, status: 'done', result: res.data } : item));
       } catch (err: any) {
         const detail = err?.response?.data?.detail ?? '서버 오류';
@@ -152,12 +162,32 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen bg-black relative overflow-hidden text-white">
+      {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} onLogin={setUser} />}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 2 }}
         className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 2.5 }}
         className="absolute bottom-[20%] right-[-5%] w-[30%] h-[30%] bg-indigo-600/10 rounded-full blur-[100px] pointer-events-none" />
 
       <main className="flex-grow container mx-auto px-4 py-8 max-w-7xl relative z-10">
+        {/* Top nav */}
+        <div className="flex items-center justify-end gap-3 mb-4">
+          <button onClick={() => router.push('/history')} className="flex items-center gap-1.5 text-zinc-400 hover:text-white text-sm transition-colors">
+            <History size={15} /> 히스토리
+          </button>
+          {user ? (
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1.5 text-zinc-400 text-sm"><User size={14} />{user.name}</span>
+              <button onClick={() => { logout(); setUser(null); }} className="flex items-center gap-1 text-zinc-600 hover:text-red-400 text-sm transition-colors">
+                <LogOut size={14} />
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => setShowAuthModal(true)} className="flex items-center gap-1.5 text-zinc-400 hover:text-white text-sm transition-colors">
+              <LogIn size={15} /> 로그인
+            </button>
+          )}
+        </div>
+
         <header className="mb-20 text-center pt-12">
           <motion.h1 initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}
             className="text-7xl font-black bg-gradient-to-b from-white to-zinc-500 bg-clip-text text-transparent mb-6 tracking-tighter">

@@ -16,7 +16,7 @@ const SUIT_SYMBOL: Record<string, string> = {
   c: '♣',
 }
 
-function Card({ code, faceDown = false }: { code: string; faceDown?: boolean }) {
+function Card({ code = '', faceDown = false }: { code?: string; faceDown?: boolean }) {
   if (faceDown) {
     return (
       <div className="w-10 h-14 rounded-lg bg-gradient-to-br from-blue-900 to-blue-700 border border-blue-500/40 flex items-center justify-center text-blue-400 text-xl font-bold shadow-md">
