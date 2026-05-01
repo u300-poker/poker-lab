@@ -171,6 +171,9 @@ export default function Home() {
       <main className="flex-grow container mx-auto px-4 py-8 max-w-7xl relative z-10">
         {/* Top nav */}
         <div className="flex items-center justify-end gap-3 mb-4">
+          <button onClick={() => router.push('/dashboard')} className="flex items-center gap-1.5 text-zinc-400 hover:text-white text-sm transition-colors">
+            <BarChart2 size={15} /> 대시보드
+          </button>
           <button onClick={() => router.push('/history')} className="flex items-center gap-1.5 text-zinc-400 hover:text-white text-sm transition-colors">
             <History size={15} /> 히스토리
           </button>
