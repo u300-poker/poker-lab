@@ -5,8 +5,8 @@ import { HandSituation } from '../../data/quiz-questions'
 const SUIT_COLOR: Record<string, string> = {
   h: 'text-red-400',
   d: 'text-red-400',
-  s: 'text-white',
-  c: 'text-white',
+  s: 'text-zinc-900',
+  c: 'text-zinc-900',
 }
 
 const SUIT_SYMBOL: Record<string, string> = {
