@@ -50,9 +50,9 @@ const SEVERITY_CONFIG = {
     label: '아쉬운 선택',
     sublabel: '더 나은 옵션이 있었어요',
     dot: '🟡',
-    bg: 'bg-yellow-500/10',
-    border: 'border-yellow-500/25',
-    text: 'text-yellow-400',
+    bg: 'bg-orange-500/10',
+    border: 'border-orange-500/25',
+    text: 'text-orange-400',
     icon: AlertCircle,
   },
   good: {
@@ -252,7 +252,7 @@ const CoachSidebar: React.FC<CoachSidebarProps> = ({ hand }) => {
                 className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/5 transition-colors"
               >
                 <div className="flex items-center gap-2">
-                  <Lightbulb size={14} className="text-yellow-400" />
+                  <Lightbulb size={14} className="text-orange-400" />
                   <span className="text-zinc-300 text-sm font-semibold">상세 분석</span>
                 </div>
                 {detailOpen

@@ -87,7 +87,7 @@ def parse_manual_hand(
     )
 
     model = genai.GenerativeModel(
-        "gemini-2.5-pro",
+        "gemini-2.5-flash",
         generation_config={"response_mime_type": "application/json", "temperature": 0},
     )
     response = model.generate_content(prompt, request_options={"timeout": 120})

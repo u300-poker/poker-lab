@@ -32,10 +32,18 @@ def _get_remaining_deck(used: list[int]) -> list[int]:
     return [c for c in Deck.GetFullDeck() if c not in used_set]
 
 
+def _has_duplicates(cards: list[int]) -> bool:
+    return len(cards) != len(set(cards))
+
+
 def _run_equity(player_cards: list[list[int]], board: list[int], remaining: list[int], samples: int) -> list[float]:
     evaluator = Evaluator()
     cards_needed = 5 - len(board)
     wins = [0.0] * len(player_cards)
+
+    all_known = [c for hand in player_cards for c in hand] + board
+    if _has_duplicates(all_known):
+        return [1 / len(player_cards)] * len(player_cards)
 
     if cards_needed == 0:
         # 보드 완성 → 바로 계산
@@ -55,6 +63,8 @@ def _run_equity(player_cards: list[list[int]], board: list[int], remaining: list
 
     for combo in combos:
         full_board = board + list(combo)
+        if _has_duplicates(full_board + [c for hand in player_cards for c in hand]):
+            continue
         scores = [evaluator.evaluate(full_board, hand) for hand in player_cards]
         min_score = min(scores)
         winners = [i for i, s in enumerate(scores) if s == min_score]

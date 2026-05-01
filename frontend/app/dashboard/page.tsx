@@ -18,7 +18,7 @@ const STREET_LABEL: Record<string, string> = {
 
 const SEVERITY_COLORS = {
   critical: '#ef4444',
-  warning: '#eab308',
+  warning: '#f97316',
   good: '#10b981',
 }
 
@@ -73,7 +73,7 @@ export default function DashboardPage() {
               <StatCard icon={<Target size={16} />} label="최다 실수 스트릿"
                 value={worstStreet.critical > 0 ? (STREET_LABEL[worstStreet.street] ?? worstStreet.street) : '-'}
                 color="text-red-400" />
-              <StatCard icon={<Zap size={16} />} label="반복 실수 키워드" value={topKeyword} color="text-yellow-400" small />
+              <StatCard icon={<Zap size={16} />} label="반복 실수 키워드" value={topKeyword} color="text-orange-400" small />
             </div>
 
             {/* 차트 */}

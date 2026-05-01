@@ -7,7 +7,7 @@ import { loadHistory, clearHistory, summarizeHistory, SavedHand } from '../../li
 
 const SEVERITY_CONFIG = {
   critical: { label: 'Critical', color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', icon: XCircle },
-  warning:  { label: 'Warning',  color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20', icon: AlertTriangle },
+  warning:  { label: 'Warning',  color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20', icon: AlertTriangle },
   good:     { label: 'Good',     color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: CheckCircle },
 }
 
@@ -59,7 +59,7 @@ export default function HistoryPage() {
                 <p className="text-xs text-zinc-500 mt-1">Good</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-yellow-400">{summary.counts.warning}</p>
+                <p className="text-2xl font-bold text-orange-400">{summary.counts.warning}</p>
                 <p className="text-xs text-zinc-500 mt-1">Warning</p>
               </div>
               <div className="text-center">
@@ -69,7 +69,7 @@ export default function HistoryPage() {
             </div>
             <div className="mt-4 h-2 bg-zinc-800 rounded-full overflow-hidden flex">
               <div className="h-full bg-emerald-500 transition-all" style={{ width: `${summary.goodRate}%` }} />
-              <div className="h-full bg-yellow-500 transition-all" style={{ width: `${Math.round(summary.counts.warning / summary.total * 100)}%` }} />
+              <div className="h-full bg-orange-500 transition-all" style={{ width: `${Math.round(summary.counts.warning / summary.total * 100)}%` }} />
               <div className="h-full bg-red-500 transition-all" style={{ width: `${summary.criticalRate}%` }} />
             </div>
             <p className="text-xs text-zinc-500 mt-3">

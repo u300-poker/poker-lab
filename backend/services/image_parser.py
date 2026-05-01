@@ -84,7 +84,7 @@ def parse_hand_image(image_bytes: bytes) -> HandLog:
         raise ValueError("GEMINI_API_KEY가 설정되지 않았습니다.")
 
     model = genai.GenerativeModel(
-        "gemini-2.5-pro",
+        "gemini-2.5-flash",
         generation_config={"response_mime_type": "application/json", "temperature": 0},
     )
 
