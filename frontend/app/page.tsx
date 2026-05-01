@@ -8,10 +8,11 @@ import VideoPlayer from '../components/VideoPlayer';
 import CoachSidebar from '../components/CoachSidebar';
 import Footer from '../components/Footer';
 import AuthModal from '../components/AuthModal';
+import ManualInputTab from '../components/ManualInputTab';
 import { saveHand } from '../lib/storage';
 import { getUser, logout, DummyUser } from '../lib/auth';
 
-type TabType = 'video' | 'image';
+type TabType = 'video' | 'image' | 'manual';
 
 interface QueuedImage {
   file: File;
@@ -218,10 +219,12 @@ export default function Home() {
 
                   {/* Tabs */}
                   <div className="flex gap-2 mb-10 bg-black/30 p-1.5 rounded-2xl">
-                    {(['video', 'image'] as TabType[]).map(tab => (
+                    {(['video', 'image', 'manual'] as TabType[]).map(tab => (
                       <button key={tab} onClick={() => setActiveTab(tab)}
                         className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === tab ? 'bg-white text-black shadow' : 'text-zinc-500 hover:text-white'}`}>
-                        {tab === 'video' ? <><Upload size={16} strokeWidth={2.5} />영상 분석</> : <><ImageIcon size={16} strokeWidth={2.5} />이미지 분석</>}
+                        {tab === 'video' ? <><Upload size={16} strokeWidth={2.5} />영상 분석</> :
+                         tab === 'image' ? <><ImageIcon size={16} strokeWidth={2.5} />이미지 분석</> :
+                         <><Brain size={16} strokeWidth={2.5} />수동 입력</>}
                       </button>
                     ))}
                   </div>
@@ -251,7 +254,7 @@ export default function Home() {
                           </div>
                         </div>
                       </motion.div>
-                    ) : (
+                    ) : activeTab === 'image' ? (
                       <motion.div key="image-tab" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.2 }}>
                         <h2 className="text-3xl font-bold mb-2 text-white tracking-tight text-center">세션 이미지 분석</h2>
@@ -314,6 +317,13 @@ export default function Home() {
                           )}
                         </motion.button>
                       </motion.div>
+                    ) : (
+                      <ManualInputTab onResult={(result) => {
+                        saveHand(result, 'manual');
+                        setQueue([{ file: new File([], 'manual'), previewUrl: '', status: 'done', result }]);
+                        setSessionDone(true);
+                        setActiveIdx(0);
+                      }} />
                     )}
                   </AnimatePresence>
                 </motion.div>
