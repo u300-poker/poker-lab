@@ -191,7 +191,7 @@ const CoachSidebar: React.FC<CoachSidebarProps> = ({ hand }) => {
 
           {/* Action Comparison — rating 기반 */}
           {hand.ev_comparison && (() => {
-            const options: {action: string; rating: string; reason: string; is_hero_choice: boolean; score: number}[] =
+            const options: {action: string; rating: string; reason: string; is_hero_choice: boolean; score: number; ev?: number}[] =
               (hand.ev_comparison as any).options ?? [];
             if (options.length === 0) return null;
 
@@ -218,9 +218,16 @@ const CoachSidebar: React.FC<CoachSidebarProps> = ({ hand }) => {
                             <span className="text-xs bg-white/10 text-zinc-300 px-2 py-0.5 rounded-full">내 선택</span>
                           )}
                         </div>
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${rc.bg} ${rc.color}`}>
-                          {rc.label}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          {o.ev != null && (
+                            <span className={`text-xs font-mono font-bold ${o.ev >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                              {o.ev >= 0 ? '+' : ''}{o.ev.toFixed(1)} BB
+                            </span>
+                          )}
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${rc.bg} ${rc.color}`}>
+                            {rc.label}
+                          </span>
+                        </div>
                       </div>
                       {/* 비율 바 */}
                       <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden mb-2">

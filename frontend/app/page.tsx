@@ -68,9 +68,10 @@ export default function Home() {
     try {
       const formData = new FormData();
       formData.append('file', videoFile);
-      const uploadRes = await axios.post('http://localhost:8000/upload', formData);
+      const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const uploadRes = await axios.post(`${API}/upload`, formData);
       setVideoUrl(URL.createObjectURL(videoFile));
-      const analyzeRes = await axios.post('http://localhost:8000/analyze', { file_path: uploadRes.data.file_path });
+      const analyzeRes = await axios.post(`${API}/analyze`, { file_path: uploadRes.data.file_path });
       setAnalysisResults(analyzeRes.data);
       if (analyzeRes.data.length > 0) setActiveHand(analyzeRes.data[0]);
     } catch (err) {
@@ -134,7 +135,7 @@ export default function Home() {
       try {
         const formData = new FormData();
         formData.append('image', queue[i].file);
-        const res = await axios.post('http://localhost:8000/analyze-image', formData);
+        const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/analyze-image`, formData);
         setQueue(prev => prev.map((item, idx) => idx === i ? { ...item, status: 'done', result: res.data } : item));
       } catch (err: any) {
         const detail = err?.response?.data?.detail ?? '서버 오류';
