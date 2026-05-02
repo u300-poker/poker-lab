@@ -1,10 +1,28 @@
 'use client'
 
+export interface SavedPlayer {
+  position: string
+  stack?: number
+  is_hero: boolean
+}
+
+export interface SavedAction {
+  player: string
+  action_type: string
+  amount?: number
+}
+
 export interface SavedDecision {
   street: 'preflop' | 'flop' | 'turn' | 'river' | string
   hero_action: string
+  amount?: number
   severity: 'critical' | 'warning' | 'good'
-  key_concept: string
+  headline?: string
+  mistake_summary?: string
+  why_bad?: string[]
+  what_to_do?: string
+  key_concept?: string
+  ev_comparison?: any
 }
 
 export interface SavedHand {
@@ -13,12 +31,22 @@ export interface SavedHand {
   imageFileName: string
   hand_id: string
   blinds: string
+  pot_size?: number
   hero_cards: string[]
   board_cards: string[]
+  players?: SavedPlayer[]
+  actions?: SavedAction[]
+  winner?: string
+  winning_pot?: number
   severity: 'critical' | 'warning' | 'good'
   headline: string
   mistake_summary: string
+  why_bad?: string[]
+  what_to_do?: string
+  key_concept?: string
+  detail?: string
   ev_comparison?: any
+  street_equities?: any[]
   decisions?: SavedDecision[]
 }
 
@@ -40,17 +68,33 @@ export function saveHand(result: any, fileName: string): SavedHand {
     imageFileName: fileName,
     hand_id: result.hand_id ?? 'unknown',
     blinds: result.blinds ?? '',
+    pot_size: result.pot_size,
     hero_cards: result.hero_cards ?? [],
     board_cards: result.board_cards ?? [],
+    players: result.players,
+    actions: result.actions,
+    winner: result.winner,
+    winning_pot: result.winning_pot,
     severity: result.severity ?? 'warning',
     headline: result.headline ?? '',
     mistake_summary: result.mistake_summary ?? '',
+    why_bad: result.why_bad,
+    what_to_do: result.what_to_do,
+    key_concept: result.key_concept,
+    detail: result.detail,
     ev_comparison: result.ev_comparison,
+    street_equities: result.street_equities,
     decisions: (result.decisions ?? []).map((d: any) => ({
       street: d.street ?? 'unknown',
       hero_action: d.hero_action ?? '',
+      amount: d.amount,
       severity: d.severity ?? 'warning',
-      key_concept: d.key_concept ?? '',
+      headline: d.headline,
+      mistake_summary: d.mistake_summary,
+      why_bad: d.why_bad,
+      what_to_do: d.what_to_do,
+      key_concept: d.key_concept,
+      ev_comparison: d.ev_comparison,
     })),
   }
   const history = loadHistory()
