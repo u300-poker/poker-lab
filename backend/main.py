@@ -8,6 +8,7 @@ from .services.video_processor import extract_hand_timestamps, extract_frame
 from .services.ocr_engine import OCREngine
 from .services.ai_coach import analyze_hand
 from .services.image_parser import parse_hand_image
+from .services.manual_parser import parse_manual_hand
 from .services.equity_calc import calculate_street_equities, calculate_hero_equity_vs_random
 from .models.game_data import HandLog
 
@@ -26,6 +27,16 @@ TEMP_DIR = "temp_videos"
 
 class AnalyzeRequest(BaseModel):
     file_path: str
+
+class ManualHandRequest(BaseModel):
+    blinds: str = "100/200"
+    position: str = "BTN"
+    hero_cards: List[str]
+    board_cards: List[str] = []
+    pot_size: float = 0
+    stack: str = ""
+    actions: str = ""
+    notes: str = ""
 
 class EquityRequest(BaseModel):
     hero_cards: List[str]
@@ -86,6 +97,26 @@ async def analyze_image(image: UploadFile = File(...)):
     image_bytes = await image.read()
     try:
         hand_log = parse_hand_image(image_bytes)
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+    return hand_log
+
+
+@app.post("/analyze-manual", response_model=HandLog)
+async def analyze_manual(request: ManualHandRequest):
+    import traceback
+    try:
+        hand_log = parse_manual_hand(
+            blinds=request.blinds,
+            position=request.position,
+            hero_cards=request.hero_cards,
+            board_cards=request.board_cards,
+            pot_size=request.pot_size,
+            stack=request.stack,
+            actions=request.actions,
+            notes=request.notes,
+        )
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))

@@ -54,8 +54,8 @@ PROMPT = """
       "key_concept": "이 결정의 핵심 포커 개념",
       "ev_comparison": {
         "options": [
-          {"action": "Fold", "is_hero_choice": false, "rating": "best", "reason": "한 문장"},
-          {"action": "Call", "is_hero_choice": true, "rating": "bad", "reason": "한 문장"}
+          {"action": "Fold", "is_hero_choice": false, "rating": "best", "ev": 2.5, "reason": "한 문장"},
+          {"action": "Call", "is_hero_choice": true, "rating": "bad", "ev": -1.2, "reason": "한 문장"}
         ]
       }
     }
@@ -65,7 +65,7 @@ PROMPT = """
 규칙:
 - decisions 배열에는 히어로가 실제로 결정을 내린 스트릿만 포함 (액션 없으면 생략)
 - street 값: "preflop", "flop", "turn", "river" 중 하나
-- ev_comparison.options: 해당 시점에서 가능한 모든 선택지 포함, rating은 best/good/okay/bad
+- ev_comparison.options: 해당 시점에서 가능한 모든 선택지 포함, rating은 best/good/okay/bad, ev는 BB 단위 예상 EV (숫자, 양수/음수 가능)
 - 카드 표기: 숫자(2~9,T,J,Q,K,A) + 수트(h=하트,d=다이아,c=클럽,s=스페이드)
 - players[].cards: 쇼다운에서 공개된 홀카드는 반드시 채워줘 (공개 안된 플레이어는 null)
 """
@@ -84,7 +84,7 @@ def parse_hand_image(image_bytes: bytes) -> HandLog:
         raise ValueError("GEMINI_API_KEY가 설정되지 않았습니다.")
 
     model = genai.GenerativeModel(
-        "gemini-2.5-pro",
+        "gemini-2.5-flash",
         generation_config={"response_mime_type": "application/json", "temperature": 0},
     )
 
@@ -118,6 +118,7 @@ def parse_hand_image(image_bytes: bytes) -> HandLog:
                     "reason": o.get("reason", ""),
                     "is_hero_choice": o.get("is_hero_choice", False),
                     "score": rating_score.get(o.get("rating", "okay"), 2),
+                    "ev": o.get("ev"),
                 }
                 for o in options
             ],
@@ -141,6 +142,7 @@ def parse_hand_image(image_bytes: bytes) -> HandLog:
                             "reason": o.get("reason", ""),
                             "is_hero_choice": o.get("is_hero_choice", False),
                             "score": rating_score.get(o.get("rating", "okay"), 2),
+                            "ev": o.get("ev"),
                         }
                         for o in raw_opts
                     ]

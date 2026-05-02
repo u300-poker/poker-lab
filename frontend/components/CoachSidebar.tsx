@@ -50,9 +50,9 @@ const SEVERITY_CONFIG = {
     label: '아쉬운 선택',
     sublabel: '더 나은 옵션이 있었어요',
     dot: '🟡',
-    bg: 'bg-yellow-500/10',
-    border: 'border-yellow-500/25',
-    text: 'text-yellow-400',
+    bg: 'bg-orange-500/10',
+    border: 'border-orange-500/25',
+    text: 'text-orange-400',
     icon: AlertCircle,
   },
   good: {
@@ -191,7 +191,7 @@ const CoachSidebar: React.FC<CoachSidebarProps> = ({ hand }) => {
 
           {/* Action Comparison — rating 기반 */}
           {hand.ev_comparison && (() => {
-            const options: {action: string; rating: string; reason: string; is_hero_choice: boolean; score: number}[] =
+            const options: {action: string; rating: string; reason: string; is_hero_choice: boolean; score: number; ev?: number}[] =
               (hand.ev_comparison as any).options ?? [];
             if (options.length === 0) return null;
 
@@ -218,9 +218,16 @@ const CoachSidebar: React.FC<CoachSidebarProps> = ({ hand }) => {
                             <span className="text-xs bg-white/10 text-zinc-300 px-2 py-0.5 rounded-full">내 선택</span>
                           )}
                         </div>
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${rc.bg} ${rc.color}`}>
-                          {rc.label}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          {o.ev != null && (
+                            <span className={`text-xs font-mono font-bold ${o.ev >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                              {o.ev >= 0 ? '+' : ''}{o.ev.toFixed(1)} BB
+                            </span>
+                          )}
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${rc.bg} ${rc.color}`}>
+                            {rc.label}
+                          </span>
+                        </div>
                       </div>
                       {/* 비율 바 */}
                       <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden mb-2">
@@ -245,7 +252,7 @@ const CoachSidebar: React.FC<CoachSidebarProps> = ({ hand }) => {
                 className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/5 transition-colors"
               >
                 <div className="flex items-center gap-2">
-                  <Lightbulb size={14} className="text-yellow-400" />
+                  <Lightbulb size={14} className="text-orange-400" />
                   <span className="text-zinc-300 text-sm font-semibold">상세 분석</span>
                 </div>
                 {detailOpen
