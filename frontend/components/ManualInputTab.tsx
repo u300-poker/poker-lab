@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Brain } from 'lucide-react'
+import { Brain, Search } from 'lucide-react'
 
 const GAME_TYPES = ['cEV', 'HU', 'ICM']
 const PLAYER_COUNTS_PRE = ['2', '3', '4', '5', '6', '9']
@@ -24,11 +24,9 @@ const SUITS = [
 
 function SectionHeader({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-2 mb-2 mt-3">
-      <span className="text-[#a09070] text-xs">←</span>
-      <span className="text-[#c8b89a] text-[11px] font-bold tracking-widest uppercase">{label}</span>
-      <span className="text-[#a09070] text-xs">→</span>
-    </div>
+    <p className="text-zinc-500 text-[11px] uppercase tracking-wider font-semibold mb-2 mt-4">
+      {label}
+    </p>
   )
 }
 
@@ -38,13 +36,13 @@ function PillGroup({ options, value, onChange }: {
   onChange: (v: string) => void
 }) {
   return (
-    <div className="flex flex-wrap gap-1.5 mb-1">
+    <div className="flex flex-wrap gap-1.5">
       {options.map(opt => (
         <button key={opt} onClick={() => onChange(opt)}
-          className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-all
+          className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all
             ${value === opt
-              ? 'bg-[#c8b89a] text-[#1a1f2e] border-[#c8b89a]'
-              : 'bg-transparent text-[#8a8a9a] border-[#3a3f5a] hover:border-[#c8b89a] hover:text-[#c8b89a]'
+              ? 'bg-white text-black border-white'
+              : 'bg-black/20 text-zinc-400 border-white/10 hover:border-white/30 hover:text-white'
             }`}>
           {opt}
         </button>
@@ -56,18 +54,21 @@ function PillGroup({ options, value, onChange }: {
 function CardSelect({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   const rank = value.length >= 2 ? value.slice(0, -1) : ''
   const suit = value.length >= 2 ? value.slice(-1) : 's'
+  const isRed = suit === 'h' || suit === 'd'
   return (
-    <div className="flex flex-col gap-1 items-center">
-      {placeholder && <span className="text-[#6a6a7a] text-[10px]">{placeholder}</span>}
-      <select value={rank} onChange={e => onChange(e.target.value + suit)}
-        className="bg-[#252a3a] border border-[#3a3f5a] rounded-lg px-1 py-1.5 text-[#c8b89a] text-xs outline-none w-14 text-center">
-        <option value="">-</option>
-        {RANKS.map(r => <option key={r} value={r}>{r}</option>)}
-      </select>
-      <select value={suit} onChange={e => onChange((rank || 'A') + e.target.value)}
-        className="bg-[#252a3a] border border-[#3a3f5a] rounded-lg px-1 py-1.5 text-[#c8b89a] text-xs outline-none w-14 text-center">
-        {SUITS.map(s => <option key={s.v} value={s.v}>{s.label}</option>)}
-      </select>
+    <div className="flex flex-col gap-1.5 items-center">
+      {placeholder && <span className="text-zinc-600 text-[10px] uppercase tracking-wider">{placeholder}</span>}
+      <div className="flex flex-col gap-1.5">
+        <select value={rank} onChange={e => onChange(e.target.value + suit)}
+          className="bg-black/30 border border-white/10 rounded-xl px-1 py-2 text-white text-sm font-bold outline-none w-14 text-center hover:border-white/20 focus:border-indigo-500 transition-colors cursor-pointer">
+          <option value="">-</option>
+          {RANKS.map(r => <option key={r} value={r}>{r}</option>)}
+        </select>
+        <select value={suit} onChange={e => onChange((rank || 'A') + e.target.value)}
+          className={`bg-black/30 border border-white/10 rounded-xl px-1 py-2 text-base font-bold outline-none w-14 text-center hover:border-white/20 focus:border-indigo-500 transition-colors cursor-pointer ${isRed ? 'text-red-400' : 'text-white'}`}>
+          {SUITS.map(s => <option key={s.v} value={s.v}>{s.label}</option>)}
+        </select>
+      </div>
     </div>
   )
 }
@@ -136,28 +137,24 @@ export default function ManualInputTab({ onResult }: Props) {
 
   return (
     <motion.div key="manual-tab" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
-      className="rounded-2xl overflow-hidden border border-[#2a2f45]"
-      style={{ background: 'linear-gradient(135deg, #1a1f2e 0%, #1e2438 100%)' }}>
-
+      transition={{ duration: 0.2 }}>
       {/* PREFLOP / POSTFLOP 탭 */}
-      <div className="flex p-4 gap-2 border-b border-[#2a2f45]">
+      <div className="flex gap-2 mb-6 bg-black/30 p-1.5 rounded-2xl">
         {(['PREFLOP', 'POSTFLOP'] as const).map(p => (
           <button key={p} onClick={() => handlePhaseChange(p)}
-            className={`px-6 py-2 rounded-lg text-xs font-bold tracking-widest border transition-all
+            className={`flex-1 py-2.5 rounded-xl text-xs font-bold tracking-widest transition-all
               ${phase === p
-                ? 'bg-[#c8b89a] text-[#1a1f2e] border-[#c8b89a]'
-                : 'bg-transparent text-[#8a8a9a] border-[#3a3f5a] hover:border-[#c8b89a]'
+                ? 'bg-white text-black shadow'
+                : 'text-zinc-500 hover:text-white'
               }`}>
             {p}
           </button>
         ))}
       </div>
 
-      <div className="flex">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* ── 좌: 필터 패널 ── */}
-        <div className="w-52 border-r border-[#2a2f45] p-4 flex flex-col overflow-y-auto max-h-[520px]">
-
+        <div className="bg-black/20 border border-white/5 rounded-3xl p-5">
           <SectionHeader label="Players" />
           <PillGroup options={phase === 'PREFLOP' ? PLAYER_COUNTS_PRE : PLAYER_COUNTS_POST}
             value={players} onChange={setPlayers} />
@@ -179,12 +176,10 @@ export default function ManualInputTab({ onResult }: Props) {
           {phase === 'POSTFLOP' && (
             <>
               <SectionHeader label="Positions" />
-              <div className="mb-1">
-                <p className="text-[#6a6a7a] text-[10px] mb-1">IP (나)</p>
-                <PillGroup options={POSITIONS} value={position} onChange={setPosition} />
-                <p className="text-[#6a6a7a] text-[10px] mb-1 mt-1">OOP (상대)</p>
-                <PillGroup options={POSITIONS} value={oppPosition} onChange={setOppPosition} />
-              </div>
+              <p className="text-zinc-600 text-[10px] uppercase tracking-wider mb-1.5">IP (나)</p>
+              <PillGroup options={POSITIONS} value={position} onChange={setPosition} />
+              <p className="text-zinc-600 text-[10px] uppercase tracking-wider mb-1.5 mt-3">OOP (상대)</p>
+              <PillGroup options={POSITIONS} value={oppPosition} onChange={setOppPosition} />
             </>
           )}
 
@@ -197,19 +192,19 @@ export default function ManualInputTab({ onResult }: Props) {
         </div>
 
         {/* ── 우: 입력 패널 ── */}
-        <div className="flex-1 p-5 flex flex-col gap-4">
+        <div className="lg:col-span-2 bg-black/20 border border-white/5 rounded-3xl p-6 flex flex-col gap-5">
           {/* 헤더 */}
-          <div className="flex items-center gap-2 border-b border-[#2a2f45] pb-3">
-            <span className="text-[#a09070] text-xs">←</span>
-            <span className="text-[#c8b89a] text-xs font-bold tracking-wider uppercase">
+          <div className="flex items-center gap-2 pb-4 border-b border-white/5">
+            <span className="text-zinc-500 text-xs uppercase tracking-wider font-semibold">상황 요약</span>
+            <span className="text-zinc-600">·</span>
+            <span className="text-white text-xs font-bold tracking-wide">
               {players}P · {stackBB}BB · {strategy} · {position}{phase === 'POSTFLOP' ? ` vs ${oppPosition}` : ''}
             </span>
-            <span className="text-[#a09070] text-xs">→</span>
           </div>
 
           {/* 히어로 카드 */}
           <div>
-            <p className="text-[#8a8a9a] text-[11px] uppercase tracking-wider mb-2">Hero Cards</p>
+            <p className="text-zinc-500 text-[11px] uppercase tracking-wider font-semibold mb-3">Hero Cards</p>
             <div className="flex gap-3">
               <CardSelect value={hero1} onChange={setHero1} placeholder="Card 1" />
               <CardSelect value={hero2} onChange={setHero2} placeholder="Card 2" />
@@ -219,8 +214,8 @@ export default function ManualInputTab({ onResult }: Props) {
           {/* 보드 카드 (포스트플랍) */}
           {phase === 'POSTFLOP' && (
             <div>
-              <p className="text-[#8a8a9a] text-[11px] uppercase tracking-wider mb-2">Board Cards</p>
-              <div className="flex gap-2 flex-wrap">
+              <p className="text-zinc-500 text-[11px] uppercase tracking-wider font-semibold mb-3">Board Cards</p>
+              <div className="flex gap-2.5 flex-wrap">
                 {boardLabels.slice(0, boardCount).map((label, i) => (
                   <CardSelect key={i} value={board[i]} onChange={v => setBoard$(i, v)} placeholder={label} />
                 ))}
@@ -231,34 +226,34 @@ export default function ManualInputTab({ onResult }: Props) {
           {/* 팟 + 액션 */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <p className="text-[#8a8a9a] text-[11px] uppercase tracking-wider mb-1">Pot (BB)</p>
+              <p className="text-zinc-500 text-[11px] uppercase tracking-wider font-semibold mb-2">Pot (BB)</p>
               <input value={potBB} onChange={e => setPotBB(e.target.value)} placeholder="예: 12" type="number"
-                className="w-full bg-[#252a3a] border border-[#3a3f5a] rounded-lg px-3 py-2 text-[#c8b89a] text-sm outline-none focus:border-[#c8b89a] transition-colors" />
+                className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-indigo-500 hover:border-white/20 transition-colors" />
             </div>
             <div>
-              <p className="text-[#8a8a9a] text-[11px] uppercase tracking-wider mb-1">Action History</p>
+              <p className="text-zinc-500 text-[11px] uppercase tracking-wider font-semibold mb-2">Action History</p>
               <input value={actions} onChange={e => setActions(e.target.value)}
                 placeholder="예: raise 3BB, call"
-                className="w-full bg-[#252a3a] border border-[#3a3f5a] rounded-lg px-3 py-2 text-[#c8b89a] text-sm outline-none focus:border-[#c8b89a] transition-colors" />
+                className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-indigo-500 hover:border-white/20 transition-colors" />
             </div>
           </div>
 
           {/* 메모 */}
           <div>
-            <p className="text-[#8a8a9a] text-[11px] uppercase tracking-wider mb-1">Notes</p>
+            <p className="text-zinc-500 text-[11px] uppercase tracking-wider font-semibold mb-2">Notes</p>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
               placeholder="예: 상대가 타이트한 레귤러, 버블 상황"
-              className="w-full bg-[#252a3a] border border-[#3a3f5a] rounded-lg px-3 py-2 text-[#c8b89a] text-sm outline-none focus:border-[#c8b89a] transition-colors resize-none" />
+              className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-indigo-500 hover:border-white/20 transition-colors resize-none" />
           </div>
 
           {/* 분석 버튼 */}
-          <button onClick={handleAnalyze} disabled={isAnalyzing}
-            className="mt-auto flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-sm transition-all
-              bg-[#c8b89a] text-[#1a1f2e] hover:bg-[#d8c8aa] disabled:opacity-40 disabled:cursor-not-allowed">
+          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+            onClick={handleAnalyze} disabled={isAnalyzing}
+            className="mt-auto w-full py-4 px-8 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 text-base shadow-[0_10px_20px_-10px_rgba(99,102,241,0.5)]">
             {isAnalyzing
-              ? <><div className="w-4 h-4 border-2 border-[#1a1f2e]/30 border-t-[#1a1f2e] rounded-full animate-spin" />분석 중...</>
-              : <><Brain size={16} />AI 분석 시작</>}
-          </button>
+              ? <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />분석 중...</>
+              : <><Search size={20} strokeWidth={2.5} />AI 분석 시작</>}
+          </motion.button>
         </div>
       </div>
     </motion.div>

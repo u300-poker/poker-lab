@@ -1,14 +1,19 @@
 "use client";
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
-import { Upload, Search, BarChart2, Zap, Brain, Target, Image as ImageIcon, Plus, X, Calculator } from 'lucide-react';
+import { Upload, Search, BarChart2, Zap, Brain, Target, Image as ImageIcon, Plus, X, Calculator, History, LogIn, LogOut, User } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import VideoPlayer from '../components/VideoPlayer';
 import CoachSidebar from '../components/CoachSidebar';
 import Footer from '../components/Footer';
+import AuthModal from '../components/AuthModal';
+import ManualInputTab from '../components/ManualInputTab';
+import { saveHand } from '../lib/storage';
+import { getUser, logout, DummyUser } from '../lib/auth';
 
-type TabType = 'video' | 'image';
+type TabType = 'video' | 'image' | 'manual';
 
 interface QueuedImage {
   file: File;
@@ -25,7 +30,14 @@ const SEVERITY_DOT: Record<string, string> = {
 };
 
 export default function Home() {
+  const router = useRouter();
+  const [user, setUser] = useState<DummyUser | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('video');
+
+  useEffect(() => {
+    setUser(getUser());
+  }, []);
 
   // Video tab state
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -136,6 +148,7 @@ export default function Home() {
         const formData = new FormData();
         formData.append('image', queue[i].file);
         const res = await axios.post('http://localhost:8000/analyze-image', formData);
+        await saveHand(res.data, queue[i].file.name, queue[i].file);
         setQueue(prev => prev.map((item, idx) => idx === i ? { ...item, status: 'done', result: res.data } : item));
       } catch (err: any) {
         const detail = err?.response?.data?.detail ?? '서버 오류';
@@ -158,6 +171,26 @@ export default function Home() {
         className="absolute bottom-[20%] right-[-5%] w-[30%] h-[30%] bg-indigo-600/10 rounded-full blur-[100px] pointer-events-none" />
 
       <main className="flex-grow container mx-auto px-4 py-8 max-w-7xl relative z-10">
+        <div className="flex items-center justify-end gap-3 mb-4">
+          <button onClick={() => router.push('/history')} className="flex items-center gap-1.5 text-zinc-400 hover:text-white text-sm transition-colors">
+            <History size={15} /> 히스토리
+          </button>
+          {user ? (
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1.5 text-zinc-400 text-sm"><User size={14} />{user.name}</span>
+              <button onClick={() => { logout(); setUser(null); }} className="flex items-center gap-1 text-zinc-600 hover:text-red-400 text-sm transition-colors">
+                <LogOut size={14} />
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => setShowAuthModal(true)} className="flex items-center gap-1.5 text-zinc-400 hover:text-white text-sm transition-colors">
+              <LogIn size={15} /> 로그인
+            </button>
+          )}
+        </div>
+
+        {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} onLogin={setUser} />}
+
         <header className="mb-20 text-center pt-12">
           <motion.h1 initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}
             className="text-7xl font-black bg-gradient-to-b from-white to-zinc-500 bg-clip-text text-transparent mb-6 tracking-tighter">
@@ -167,6 +200,17 @@ export default function Home() {
             className="text-zinc-400 text-xl font-light mb-8 max-w-2xl mx-auto leading-relaxed tracking-tight">
             당신의 포커 실력을 연구하고 교정하는 <span className="text-white font-semibold">AI 퍼스널 코치</span>
           </motion.p>
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.35 }}
+            className="flex items-center justify-center gap-3 flex-wrap">
+            <a href="/quiz"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/30 hover:border-indigo-400/50 text-indigo-300 font-semibold rounded-2xl transition-all text-sm">
+              🎯 내 포커 성향 테스트하기
+            </a>
+            <a href="/dashboard"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/30 hover:border-emerald-400/50 text-emerald-300 font-semibold rounded-2xl transition-all text-sm">
+              📊 패턴 대시보드
+            </a>
+          </motion.div>
         </header>
 
         <AnimatePresence mode="wait">
@@ -179,16 +223,28 @@ export default function Home() {
 
                   {/* Tabs */}
                   <div className="flex gap-2 mb-10 bg-black/30 p-1.5 rounded-2xl">
-                    {(['video', 'image'] as TabType[]).map(tab => (
+                    {(['video', 'image', 'manual'] as TabType[]).map(tab => (
                       <button key={tab} onClick={() => setActiveTab(tab)}
                         className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === tab ? 'bg-white text-black shadow' : 'text-zinc-500 hover:text-white'}`}>
-                        {tab === 'video' ? <><Upload size={16} strokeWidth={2.5} />영상 분석</> : <><ImageIcon size={16} strokeWidth={2.5} />이미지 분석</>}
+                        {tab === 'video' ? <><Upload size={16} strokeWidth={2.5} />영상 분석</> :
+                         tab === 'image' ? <><ImageIcon size={16} strokeWidth={2.5} />이미지 분석</> :
+                         <><Brain size={16} strokeWidth={2.5} />수동 입력</>}
                       </button>
                     ))}
                   </div>
 
                   <AnimatePresence mode="wait">
-                    {activeTab === 'video' ? (
+                    {activeTab === 'manual' ? (
+                      <motion.div key="manual-tab" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.2 }}>
+                        <ManualInputTab onResult={async (result) => {
+                          await saveHand(result, 'manual');
+                          setQueue([{ file: new File([], 'manual'), previewUrl: '', status: 'done', result }]);
+                          setSessionDone(true);
+                          setActiveIdx(0);
+                        }} />
+                      </motion.div>
+                    ) : activeTab === 'video' ? (
                       <motion.div key="video-tab" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.2 }} className="text-center">
                         <div className="mb-8 inline-flex items-center justify-center w-24 h-24 bg-blue-500/10 rounded-3xl text-blue-400 border border-blue-500/20">
@@ -278,6 +334,90 @@ export default function Home() {
                     )}
                   </AnimatePresence>
                 </motion.div>
+              </div>
+
+              {/* Product Preview */}
+              <div className="max-w-6xl mx-auto">
+                <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+                  className="text-center mb-12">
+                  <p className="text-zinc-500 text-xs uppercase tracking-[0.3em] font-bold mb-3">미리보기</p>
+                  <h2 className="text-4xl md:text-5xl font-black bg-gradient-to-b from-white to-zinc-500 bg-clip-text text-transparent tracking-tight mb-4">
+                    한 핸드도 놓치지 않고, 제대로 복기
+                  </h2>
+                  <p className="text-zinc-500 text-lg font-light">실제 분석 결과 — 이렇게 보여드립니다.</p>
+                </motion.div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                  {/* Mock 1: AI Coaching Card */}
+                  <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }}
+                    className="bg-zinc-900/40 backdrop-blur-xl border border-red-500/20 rounded-3xl p-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-2xl">🔴</span>
+                      <span className="text-xs font-bold text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full">Critical</span>
+                    </div>
+                    <h3 className="text-white font-bold text-lg mb-2 tracking-tight">리버 콜은 치명적 실수</h3>
+                    <p className="text-zinc-400 text-sm leading-relaxed mb-4">오버페어 상대의 풀 사이즈 베팅에 탑페어로 콜 — 상대 레인지에서 우리가 이기는 핸드는 거의 없음</p>
+                    <div className="bg-black/30 rounded-xl p-3 space-y-1.5">
+                      <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider">왜 나빴나</p>
+                      <p className="text-zinc-300 text-xs">· 상대 레인지가 셋·스트레이트로 가득함</p>
+                      <p className="text-zinc-300 text-xs">· 폿 오즈가 충분치 않음</p>
+                    </div>
+                  </motion.div>
+
+                  {/* Mock 2: Weakness Analysis */}
+                  <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }}
+                    className="bg-zinc-900/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <BarChart2 size={16} className="text-indigo-400" />
+                      <span className="text-zinc-300 text-sm font-semibold">스트릿별 약점</span>
+                    </div>
+                    <div className="space-y-3">
+                      {[
+                        { label: '프리플랍', good: 70, warn: 20, crit: 10 },
+                        { label: '플랍', good: 50, warn: 30, crit: 20 },
+                        { label: '턴', good: 30, warn: 35, crit: 35 },
+                        { label: '리버', good: 20, warn: 30, crit: 50 },
+                      ].map(s => (
+                        <div key={s.label}>
+                          <div className="flex justify-between text-xs mb-1">
+                            <span className="text-zinc-400">{s.label}</span>
+                            <span className="text-red-400">{s.crit}% critical</span>
+                          </div>
+                          <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden flex">
+                            <div className="h-full bg-emerald-500" style={{ width: `${s.good}%` }} />
+                            <div className="h-full bg-orange-500" style={{ width: `${s.warn}%` }} />
+                            <div className="h-full bg-red-500" style={{ width: `${s.crit}%` }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-zinc-500 text-xs mt-4 leading-relaxed">⚠ 리버 의사결정에서 critical 비율이 높습니다.</p>
+                  </motion.div>
+
+                  {/* Mock 3: Pattern */}
+                  <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 }}
+                    className="bg-zinc-900/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Target size={16} className="text-emerald-400" />
+                      <span className="text-zinc-300 text-sm font-semibold">반복되는 약점</span>
+                    </div>
+                    <div className="space-y-2">
+                      {[
+                        { label: '폿 오즈 계산 미숙', count: 7 },
+                        { label: 'SPR 판단 미스', count: 5 },
+                        { label: '오버폴드', count: 4 },
+                        { label: '무리한 블러핑', count: 3 },
+                        { label: '밸류 추출 실패', count: 3 },
+                        { label: '사이징 텔', count: 2 },
+                      ].map(c => (
+                        <div key={c.label} className="flex items-center justify-between bg-black/30 rounded-lg px-3 py-2">
+                          <span className="text-zinc-300 text-xs">{c.label}</span>
+                          <span className="text-xs font-bold bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full">{c.count}회</span>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                </div>
               </div>
 
               {/* Features */}

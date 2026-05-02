@@ -1,5 +1,26 @@
 'use client'
 
+const DB_NAME = 'pokerlab'
+const STORE_NAME = 'hands'
+
+let db: IDBDatabase | null = null
+
+async function initDB(): Promise<IDBDatabase> {
+  if (db) return db
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1)
+    req.onupgradeneeded = () => {
+      const store = req.result.createObjectStore(STORE_NAME, { keyPath: 'id' })
+      store.createIndex('savedAt', 'savedAt', { unique: false })
+    }
+    req.onsuccess = () => {
+      db = req.result
+      resolve(db)
+    }
+    req.onerror = () => reject(req.error)
+  })
+}
+
 export interface SavedPlayer {
   position: string
   stack?: number
@@ -29,6 +50,7 @@ export interface SavedHand {
   id: string
   savedAt: string
   imageFileName: string
+  imageData?: string
   hand_id: string
   blinds: string
   pot_size?: number
@@ -61,11 +83,22 @@ export function loadHistory(): SavedHand[] {
   }
 }
 
-export function saveHand(result: any, fileName: string): SavedHand {
+export async function saveHand(result: any, fileName: string, imageFile?: File): Promise<SavedHand> {
+  let imageData: string | undefined
+
+  if (imageFile) {
+    imageData = await new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.readAsDataURL(imageFile)
+    })
+  }
+
   const hand: SavedHand = {
     id: crypto.randomUUID(),
     savedAt: new Date().toISOString(),
     imageFileName: fileName,
+    imageData,
     hand_id: result.hand_id ?? 'unknown',
     blinds: result.blinds ?? '',
     pot_size: result.pot_size,
@@ -97,14 +130,44 @@ export function saveHand(result: any, fileName: string): SavedHand {
       ev_comparison: d.ev_comparison,
     })),
   }
-  const history = loadHistory()
-  history.unshift(hand)
-  localStorage.setItem(KEY, JSON.stringify(history.slice(0, 200)))
-  return hand
+
+  const database = await initDB()
+  return new Promise((resolve, reject) => {
+    const tx = database.transaction([STORE_NAME], 'readwrite')
+    const store = tx.objectStore(STORE_NAME)
+    const req = store.add(hand)
+    req.onsuccess = () => {
+      const history = loadHistory()
+      history.unshift(hand)
+      localStorage.setItem(KEY, JSON.stringify(history.slice(0, 200)))
+      resolve(hand)
+    }
+    req.onerror = () => reject(req.error)
+  })
+}
+
+export async function getHand(id: string): Promise<SavedHand | null> {
+  const database = await initDB()
+  return new Promise((resolve, reject) => {
+    const tx = database.transaction([STORE_NAME], 'readonly')
+    const store = tx.objectStore(STORE_NAME)
+    const req = store.get(id)
+    req.onsuccess = () => resolve(req.result || null)
+    req.onerror = () => reject(req.error)
+  })
 }
 
 export function clearHistory() {
   localStorage.removeItem(KEY)
+}
+
+export function importHistory(hands: SavedHand[]) {
+  const existing = loadHistory()
+  const existingIds = new Set(existing.map(h => h.id))
+  const newHands = hands.filter(h => !existingIds.has(h.id))
+  const merged = [...newHands, ...existing]
+  localStorage.setItem(KEY, JSON.stringify(merged.slice(0, 200)))
+  return newHands.length
 }
 
 export function summarizeHistory(history: SavedHand[]) {
