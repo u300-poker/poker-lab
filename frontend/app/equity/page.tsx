@@ -84,6 +84,7 @@ const parseRange = (rangeStr: string): Array<[string, string]> => {
 
 export default function EquityPage() {
   const [heroCards, setHeroCards] = useState<[string | null, string | null]>([null, null]);
+  const [heroEquity, setHeroEquity] = useState<number | undefined>();
   const [boardCards, setBoardCards] = useState<(string | null)[]>([null, null, null, null, null]);
   const [opponents, setOpponents] = useState<Array<{
     cards: [string | null, string | null];
@@ -105,7 +106,7 @@ export default function EquityPage() {
     if (heroCards[0] && heroCards[1] && opponents.some(o => o.cards[0] && o.cards[1])) {
       calculateEquity();
     }
-  }, [heroCards, boardCards, opponents.map(o => o.cards).flat()]);
+  }, [JSON.stringify(heroCards), JSON.stringify(boardCards), JSON.stringify(opponents.map(o => o.cards))]);
 
   const getNextSlot = (current: { type: SlotType; index?: number }): { type: SlotType; index?: number } | null => {
     // 슬롯 순서: hero1 → hero2 → board[0~4] → opponent[0][0] → opponent[0][1] → opponent[1][0]...
@@ -238,6 +239,18 @@ export default function EquityPage() {
     return hands;
   };
 
+  const getSelectedCards = (): Set<string> => {
+    const selected = new Set<string>();
+    if (heroCards[0]) selected.add(heroCards[0]);
+    if (heroCards[1]) selected.add(heroCards[1]);
+    boardCards.forEach(card => { if (card) selected.add(card); });
+    opponents.forEach(opp => {
+      if (opp.cards[0]) selected.add(opp.cards[0]);
+      if (opp.cards[1]) selected.add(opp.cards[1]);
+    });
+    return selected;
+  };
+
   const calculateEquity = async () => {
     const hero = heroCards.filter((c) => c !== null) as string[];
     const board = boardCards.filter((c) => c !== null) as string[];
@@ -248,6 +261,7 @@ export default function EquityPage() {
     if (hero.length !== 2 || opps.length === 0) return;
 
     setLoading(true);
+    setHeroEquity(undefined);
     try {
       const response = await fetch('http://localhost:8000/calculate-equity', {
         method: 'POST',
@@ -270,9 +284,22 @@ export default function EquityPage() {
       // 마지막 스트릿의 에퀀티 추출
       if (data.length > 0) {
         const lastStreet = data[data.length - 1];
+
+        // Hero 에퀴티 추출
+        const heroEquityData = lastStreet.equities.find((eq) => eq.is_hero);
+        setHeroEquity(heroEquityData?.equity);
+
+        // Opponent 에퀴티들 추출
         const newOpponents = opponents.map((opp, idx) => {
+          // 각 opponent의 정확한 position 찾기
+          // Backend 규칙:
+          //   - 1명 opponent: "Opponent"
+          //   - 2명 이상: "Opponent 1", "Opponent 2", ...
+          const opponentPosition = opponents.length === 1
+            ? 'Opponent'
+            : `Opponent ${idx + 1}`;
           const equityData = lastStreet.equities.find(
-            (eq) => eq.position.includes('Opponent') && !eq.is_hero
+            (eq) => eq.position === opponentPosition && !eq.is_hero
           );
           return { ...opp, equity: equityData?.equity };
         });
@@ -305,8 +332,8 @@ export default function EquityPage() {
     >
       {card ? (
         <>
-          <div className="font-bold">{card[0]}</div>
-          <div>{card[1]}</div>
+          <div className="font-bold text-lg">{getRankDisplay(card[0])}</div>
+          <div className="text-xl">{getSuitSymbol(card[1])}</div>
         </>
       ) : (
         <div className="text-zinc-600">+</div>
@@ -356,13 +383,14 @@ export default function EquityPage() {
               </div>
               <div className="flex-1 text-right">
                 <div className="text-4xl font-light tracking-wide text-blue-300">
-                  {loading ? '-' : '100.0'}%
+                  {loading ? '-' : heroEquity !== undefined ? heroEquity.toFixed(1) : '-'}%
                 </div>
               </div>
               <div className="flex flex-col gap-2 ml-4">
                 <button
                   onClick={() => {
                     setHeroCards([null, null]);
+                    setHeroEquity(undefined);
                     setActiveSlot(null);
                   }}
                   className="text-xl text-zinc-500 hover:text-white"
@@ -579,12 +607,16 @@ export default function EquityPage() {
                 {RANKS.map((rank) => {
                   const card = `${rank}${suit}`;
                   const isRed = suit === 'h' || suit === 'd';
+                  const isSelected = getSelectedCards().has(card);
                   return (
                     <button
                       key={card}
-                      onClick={() => handleCardSelect(card)}
+                      onClick={() => !isSelected && handleCardSelect(card)}
+                      disabled={isSelected}
                       className={`flex-1 py-2 rounded-lg font-bold text-xs transition-colors ${
-                        isRed
+                        isSelected
+                          ? 'opacity-40 cursor-not-allowed bg-zinc-700'
+                          : isRed
                           ? 'bg-white text-red-600 hover:bg-gray-200'
                           : 'bg-white text-black hover:bg-gray-200'
                       }`}

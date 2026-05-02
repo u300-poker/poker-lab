@@ -69,7 +69,7 @@ def _run_equity(player_cards: list[list[int]], board: list[int], remaining: list
 def calculate_hero_equity_vs_random(
     hero_cards: list[str],
     board_cards: list[str],
-    mc_samples: int = 2000,
+    mc_samples: int = 10000,
 ) -> list[dict]:
     """
     히어로 카드 + 보드만 알 때, 상대방이 랜덤 핸드를 가진다고 가정하고
@@ -135,7 +135,7 @@ def calculate_hero_equity_vs_random(
 def calculate_street_equities(
     players: list[dict],  # [{"position": "MP", "cards": ["9h", "9c"], "is_hero": True}, ...]
     board_cards: list[str],  # 최종 보드 5장
-    mc_samples: int = 3000,
+    mc_samples: int = 10000,
 ) -> list[dict]:
     """
     각 스트릿별 에퀴티를 계산해 반환.

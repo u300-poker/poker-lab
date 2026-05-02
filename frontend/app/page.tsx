@@ -1,7 +1,8 @@
 "use client";
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
-import { Upload, Search, BarChart2, Zap, Brain, Target, Image as ImageIcon, Plus, X } from 'lucide-react';
+import { Upload, Search, BarChart2, Zap, Brain, Target, Image as ImageIcon, Plus, X, Calculator } from 'lucide-react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import VideoPlayer from '../components/VideoPlayer';
 import CoachSidebar from '../components/CoachSidebar';
@@ -280,22 +281,31 @@ export default function Home() {
               </div>
 
               {/* Features */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
                 {[
                   { icon: Brain, title: "AI 맞춤형 코칭", desc: "Gemini 2.5 Pro 기반의 코치가 각 상황에서의 실수를 정확하게 찾아내고 전략적 조언을 드립니다." },
                   { icon: Zap, title: "세션 전체 분석", desc: "한 세션의 핸드 이미지를 여러 장 올리면 모든 핸드를 순서대로 분석해 드립니다." },
-                  { icon: Target, title: "선택지별 비교", desc: "각 상황에서 가능했던 모든 선택(Fold/Call/Raise)을 최선/나쁨으로 평가해 직관적으로 보여줍니다." }
-                ].map((feat, i) => (
-                  <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                    className="group bg-zinc-900/20 backdrop-blur-sm p-10 rounded-[32px] border border-white/5 hover:bg-zinc-900/40 transition-all duration-500">
-                    <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center mb-8 border border-white/10 group-hover:bg-white/10 transition-colors">
-                      <feat.icon size={28} strokeWidth={1.5} className="text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold mb-4 text-white tracking-tight">{feat.title}</h3>
-                    <p className="text-zinc-500 leading-relaxed font-light">{feat.desc}</p>
-                  </motion.div>
-                ))}
+                  { icon: Target, title: "선택지별 비교", desc: "각 상황에서 가능했던 모든 선택(Fold/Call/Raise)을 최선/나쁨으로 평가해 직관적으로 보여줍니다." },
+                  { icon: Calculator, title: "Odds Calculator", desc: "카드를 입력하면 실시간으로 에퀴티를 계산하고 스트릿별 확률을 비교할 수 있습니다.", href: "/equity" }
+                ].map((feat, i) => {
+                  const cardContent = (
+                    <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+                      className="group bg-zinc-900/20 backdrop-blur-sm p-10 rounded-[32px] border border-white/5 hover:bg-zinc-900/40 transition-all duration-500 h-full cursor-pointer">
+                      <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center mb-8 border border-white/10 group-hover:bg-white/10 transition-colors">
+                        <feat.icon size={28} strokeWidth={1.5} className="text-white" />
+                      </div>
+                      <h3 className="text-xl font-bold mb-4 text-white tracking-tight">{feat.title}</h3>
+                      <p className="text-zinc-500 leading-relaxed font-light">{feat.desc}</p>
+                    </motion.div>
+                  );
+
+                  return feat.href ? (
+                    <Link key={i} href={feat.href}>{cardContent}</Link>
+                  ) : (
+                    <div key={i}>{cardContent}</div>
+                  );
+                })}
               </div>
             </motion.div>
 
